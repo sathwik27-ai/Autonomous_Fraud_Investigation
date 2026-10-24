@@ -37,7 +37,7 @@ import Ticker from "@/components/Ticker";
 import Timeline, { type TimelinePhase } from "@/components/Timeline";
 
 const POLL_MS = 5000;
-const BUILD = "7f66db4";
+const BUILD = (typeof process !== "undefined" && process?.env?.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA?.slice(0, 7)) || "fe5bffe";
 const TABS = ["Dashboard", "Investigations", "Graph Intelligence", "Knowledge Base", "Automation", "Settings"] as const;
 type Tab = (typeof TABS)[number];
 
@@ -164,6 +164,12 @@ export default function Console() {
       setSelectedId(investigations[0].id);
     }
   }, [investigations, selectedId]);
+
+  useEffect(() => {
+    if (tab === "Settings" && !graphBackend) {
+      refresh();
+    }
+  }, [tab, graphBackend, refresh]);
 
   const onInvestigateResult = (r: InvestigateResult) => {
     setResult(r);

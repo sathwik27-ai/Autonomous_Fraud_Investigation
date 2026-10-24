@@ -69,10 +69,20 @@ export interface GraphData {
   links: { source: string; target: string; rel: string }[];
 }
 
-async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${API}${path}`, { cache: "no-store", headers: authHeaders() });
-  if (!res.ok) throw new Error(`${path}: ${res.status}`);
-  return res.json();
+async function get<T>(path: string, timeoutMs = 8000): Promise<T> {
+  const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timeoutId = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+  try {
+    const res = await fetch(`${API}${path}`, {
+      cache: "no-store",
+      headers: authHeaders(),
+      signal: controller?.signal,
+    });
+    if (!res.ok) throw new Error(`${path}: ${res.status}`);
+    return res.json();
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
 }
 
 export interface InvestigatePayload {
@@ -114,7 +124,14 @@ export interface Health {
   version?: string;
 }
 
-export const fetchHealth = () => get<Health>("/health");
+export const fetchHealth = async (): Promise<Health> => {
+  try {
+    return await get<Health>("/health", 7000);
+  } catch {
+    // Retry once on failure/timeout to handle cold start
+    return await get<Health>("/health", 10000);
+  }
+};
 export const fetchStats = () => get<Stats>("/stats");
 export const fetchFeed = () => get<FeedItem[]>("/transactions/feed?limit=30");
 export const fetchInvestigations = () => get<InvestigationSummary[]>("/investigations?limit=25");
