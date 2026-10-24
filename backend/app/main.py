@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .api.routes import public_router, router
+from .config import settings
 from .core.rate_limit import RateLimitMiddleware
 from .db.session import init_db
 from .graph.client import get_graph
@@ -25,9 +26,16 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+cors_origins_list = (
+    [origin.strip() for origin in settings.cors_origins.split(",") if origin.strip()]
+    if settings.cors_origins != "*"
+    else ["*"]
+)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=cors_origins_list,
+    allow_credentials=True if "*" not in cors_origins_list else False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

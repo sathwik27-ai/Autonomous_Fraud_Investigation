@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     api_key: str = ""
     webhook_secret: str = ""
 
+    # CORS — comma-separated origins, or "*" to allow all (including Vercel deployments)
+    cors_origins: str = "*"
+
     # Storage
     database_url: str = "sqlite:///./fraud.db"
 
