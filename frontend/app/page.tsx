@@ -84,18 +84,36 @@ export default function Console() {
   const refresh = useCallback(async () => {
     try {
       const t0 = performance.now();
-      const [s, f, inv, h] = await Promise.all([
+      const [statsRes, feedRes, invRes, healthRes] = await Promise.allSettled([
         fetchStats(),
         fetchFeed(),
         fetchInvestigations(),
         fetchHealth(),
       ]);
       setLatency(Math.round(performance.now() - t0));
-      setStats(s);
-      setFeed(f);
-      setInvestigations(inv);
-      setGraphBackend(h.graph_backend);
-      setOnline(true);
+
+      let hasSuccess = false;
+      if (statsRes.status === "fulfilled") {
+        setStats(statsRes.value);
+        hasSuccess = true;
+      }
+      if (feedRes.status === "fulfilled") {
+        setFeed(feedRes.value);
+        hasSuccess = true;
+      }
+      if (invRes.status === "fulfilled") {
+        setInvestigations(invRes.value);
+        hasSuccess = true;
+      }
+      if (healthRes.status === "fulfilled") {
+        setGraphBackend(healthRes.value.graph_backend);
+        setOnline(true);
+      } else if (hasSuccess) {
+        setOnline(true);
+      } else {
+        setOnline(false);
+        setLatency(null);
+      }
     } catch (err) {
       console.error("Failed to refresh dashboard data:", err);
       setOnline(false);

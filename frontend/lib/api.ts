@@ -6,7 +6,7 @@ declare const process: {
   };
 };
 
-const DEFAULT_API_URL = "https://fraud-investigation-backend.onrender.com";
+const DEFAULT_API_URL = "https://autonomous-fraud-investigation.onrender.com";
 const rawApi = (typeof process !== "undefined" && process?.env?.NEXT_PUBLIC_API_URL) || DEFAULT_API_URL;
 export const API = rawApi.replace(/\/+$/, "");
 const API_KEY = (typeof process !== "undefined" && process?.env?.NEXT_PUBLIC_API_KEY) ?? "";

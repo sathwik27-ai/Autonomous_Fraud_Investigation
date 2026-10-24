@@ -167,24 +167,34 @@ def get_investigation(inv_id: int, db: Session = Depends(get_db)):
 
 @router.get("/stats")
 def stats(db: Session = Depends(get_db)):
-    total = db.query(func.count(TransactionEvent.id)).scalar() or 0
-    investigated = db.query(func.count(Investigation.id)).scalar() or 0
-    blocked = (
-        db.query(func.count(Investigation.id))
-        .filter(Investigation.action == "block").scalar() or 0
-    )
-    review = (
-        db.query(func.count(Investigation.id))
-        .filter(Investigation.action == "review").scalar() or 0
-    )
-    avg_score = db.query(func.avg(Investigation.fraud_score)).scalar()
-    return {
-        "total_transactions": total,
-        "investigated": investigated,
-        "blocked": blocked,
-        "under_review": review,
-        "avg_fraud_score": round(float(avg_score), 3) if avg_score is not None else 0.0,
-    }
+    try:
+        total = db.query(func.count(TransactionEvent.id)).scalar() or 0
+        investigated = db.query(func.count(Investigation.id)).scalar() or 0
+        blocked = (
+            db.query(func.count(Investigation.id))
+            .filter(Investigation.action == "block").scalar() or 0
+        )
+        review = (
+            db.query(func.count(Investigation.id))
+            .filter(Investigation.action == "review").scalar() or 0
+        )
+        avg_score = db.query(func.avg(Investigation.fraud_score)).scalar()
+        return {
+            "total_transactions": total,
+            "investigated": investigated,
+            "blocked": blocked,
+            "under_review": review,
+            "avg_fraud_score": round(float(avg_score), 3) if avg_score is not None else 0.0,
+        }
+    except Exception as exc:
+        print(f"[stats] Warning querying stats: {exc}")
+        return {
+            "total_transactions": 0,
+            "investigated": 0,
+            "blocked": 0,
+            "under_review": 0,
+            "avg_fraud_score": 0.0,
+        }
 
 
 @router.get("/graph/{user_id}")

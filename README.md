@@ -12,9 +12,9 @@ An AI-powered system that not only detects fraud but investigates relationships 
 
 | Service | URL | Notes |
 |---|---|---|
-| **Backend API (Render)** | [https://fraud-investigation-backend.onrender.com](https://fraud-investigation-backend.onrender.com) | Live FastAPI service |
-| **Interactive API Docs** | [https://fraud-investigation-backend.onrender.com/docs](https://fraud-investigation-backend.onrender.com/docs) | Swagger UI for exploring & testing endpoints |
-| **Health Check** | [https://fraud-investigation-backend.onrender.com/health](https://fraud-investigation-backend.onrender.com/health) | Reports status & active graph backend |
+| **Backend API (Render)** | [https://autonomous-fraud-investigation.onrender.com](https://autonomous-fraud-investigation.onrender.com) | Live FastAPI service |
+| **Interactive API Docs** | [https://autonomous-fraud-investigation.onrender.com/docs](https://autonomous-fraud-investigation.onrender.com/docs) | Swagger UI for exploring & testing endpoints |
+| **Health Check** | [https://autonomous-fraud-investigation.onrender.com/health](https://autonomous-fraud-investigation.onrender.com/health) | Reports status & active graph backend |
 | **Frontend Dashboard** | Deployable on Vercel / Render | See deployment guide below |
 
 ---
@@ -60,7 +60,7 @@ An AI-powered system that not only detects fraud but investigates relationships 
 Frontend (Next.js 15 Dashboard on Vercel)
          │  (HTTPS / REST)
          ▼
-Backend API (FastAPI on Render: https://fraud-investigation-backend.onrender.com)
+Backend API (FastAPI on Render: https://autonomous-fraud-investigation.onrender.com)
    ┌─────┴─────────────────────────┐
    │                               │
    ▼                               ▼
@@ -129,7 +129,7 @@ The frontend is built with **Next.js 15** and includes `vercel.json` for zero-co
    - **Framework Preset**: Next.js
 4. In **Environment Variables**, add:
    ```env
-   NEXT_PUBLIC_API_URL=https://fraud-investigation-backend.onrender.com
+   NEXT_PUBLIC_API_URL=https://autonomous-fraud-investigation.onrender.com
    NEXT_PUBLIC_API_KEY=
    ```
 5. Click **Deploy**. Your dashboard will be live on `https://your-project.vercel.app`!
@@ -142,7 +142,7 @@ By default, the backend operates on SQLite or fallback storage. To connect persi
 
 1. Create a free PostgreSQL instance on **[Render](https://render.com)**, **[Neon.tech](https://neon.tech)**, or **[Supabase](https://supabase.com)**.
 2. Copy the connection string. Both `postgresql://` and `postgres://` formats are supported.
-3. In your **Render Dashboard** → Backend Web Service (`fraud-investigation-backend`) → **Environment**:
+3. In your **Render Dashboard** → Backend Web Service (`autonomous-fraud-investigation`) → **Environment**:
    - Add `DATABASE_URL`:
      ```env
      DATABASE_URL=postgresql://user:password@hostname:5432/dbname?sslmode=require
