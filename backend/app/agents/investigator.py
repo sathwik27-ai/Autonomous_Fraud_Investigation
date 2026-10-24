@@ -65,7 +65,7 @@ def _log(state: AgentState, entry: dict) -> list[dict]:
 
 
 def _rules_args(tool: str, state: AgentState) -> dict:
-    tx = state["transaction"]
+    tx = state.get("transaction", {})
     if tool == "get_user_history":
         return {"user_id": tx.get("user_id", "")}
     if tool == "check_transaction_pattern":
@@ -73,7 +73,7 @@ def _rules_args(tool: str, state: AgentState) -> dict:
     if tool == "get_linked_accounts":
         return {"user_id": tx.get("user_id", "")}
     if tool == "search_similar_cases":
-        pattern = state.get("tool_results", {}).get("check_transaction_pattern", {})
+        pattern = (state.get("tool_results") or {}).get("check_transaction_pattern") or {}
         anomalies = " ".join(pattern.get("anomalies", []))
         return {"query": (
             f"{tx.get('merchant_category', 'payment')} transaction of ${tx.get('amount')} "
@@ -86,31 +86,39 @@ def _rules_args(tool: str, state: AgentState) -> dict:
 # ---------------------------------------------------------------- planner
 
 def planner(state: AgentState) -> dict:
-    if state["engine"] == "claude":
+    if state.get("engine") == "claude":
         try:
             return _claude_planner(state)
-        except Exception as e:  # API/network failure -> degrade gracefully
+        except Exception as e:  # API/network failure -> degrade gracefully to deterministic rules
             log = _log(state, {
                 "type": "thought",
                 "content": f"Claude engine unavailable ({type(e).__name__}) — "
                            f"switching to rule-based engine",
             })
             done = set(state.get("tool_results", {}))
-            return {
+            queue = [t for t in RULES_PLAN if t not in done]
+            fallback_state = {
+                **state,
                 "engine": "rules",
-                "plan_queue": [t for t in RULES_PLAN if t not in done],
+                "plan_queue": queue,
                 "reasoning_log": log,
             }
+            res = _rules_planner(fallback_state)
+            res["engine"] = "rules"
+            return res
     return _rules_planner(state)
 
 
 def _rules_planner(state: AgentState) -> dict:
     queue = list(state.get("plan_queue", []))
     if not queue:
-        return {"pending_calls": [], "reasoning_log": _log(state, {
-            "type": "thought",
-            "content": "All planned checks complete — computing weighted fraud score.",
-        })}
+        return {
+            "pending_calls": [],
+            "reasoning_log": _log(state, {
+                "type": "thought",
+                "content": "All planned checks complete — computing weighted fraud score.",
+            }),
+        }
     tool = queue.pop(0)
     thoughts = {
         "get_user_history": "Establish the sender's behavioural baseline.",
@@ -133,25 +141,27 @@ def _claude_planner(state: AgentState) -> dict:
 
     kwargs: dict[str, Any] = dict(
         model=settings.anthropic_model,
-        max_tokens=16000,
+        max_tokens=4096,
         system=build_system_prompt(),
         tools=TOOL_SPECS + [FINALIZE_SPEC],
         messages=state["messages"],
     )
     if force:
         kwargs["tool_choice"] = {"type": "tool", "name": "finalize_decision"}
-    else:
-        kwargs["thinking"] = {"type": "adaptive"}
+    elif "claude-3-7" in settings.anthropic_model:
+        kwargs["thinking"] = {"type": "enabled", "budget_tokens": 1024}
 
     response = client.messages.create(**kwargs)
 
-    log = state.get("reasoning_log", [])
+    log = list(state.get("reasoning_log", []))
     tmp_state = dict(state)
     for block in response.content:
-        if block.type == "text" and block.text.strip():
+        if getattr(block, "type", None) == "text" and getattr(block, "text", None):
             log = _log({**tmp_state, "reasoning_log": log}, {"type": "thought", "content": block.text.strip()})
+        elif getattr(block, "type", None) == "thinking" and getattr(block, "thinking", None):
+            log = _log({**tmp_state, "reasoning_log": log}, {"type": "thought", "content": block.thinking.strip()})
 
-    tool_calls = [b for b in response.content if b.type == "tool_use"]
+    tool_calls = [b for b in response.content if getattr(b, "type", None) == "tool_use"]
     finalize = next((c for c in tool_calls if c.name == "finalize_decision"), None)
     if finalize:
         return {
@@ -188,7 +198,7 @@ def _claude_planner(state: AgentState) -> dict:
 
 def run_tools(state: AgentState) -> dict:
     results = dict(state.get("tool_results", {}))
-    log = state.get("reasoning_log", [])
+    log = list(state.get("reasoning_log", []))
     result_blocks = []
 
     for call in state.get("pending_calls", []):
@@ -205,7 +215,7 @@ def run_tools(state: AgentState) -> dict:
         })
 
     update: dict = {"tool_results": results, "reasoning_log": log, "pending_calls": []}
-    if state["engine"] == "claude":
+    if state.get("engine") == "claude":
         update["messages"] = state["messages"] + [{"role": "user", "content": result_blocks}]
     return update
 
@@ -215,7 +225,7 @@ def run_tools(state: AgentState) -> dict:
 def decide(state: AgentState) -> dict:
     decision = state.get("decision")
     if decision is None:
-        decision = score_from_results(state["transaction"], state.get("tool_results", {}))
+        decision = score_from_results(state.get("transaction", {}), state.get("tool_results", {}))
     score = float(decision.get("fraud_score", 0.0))
     score = round(max(0.0, min(1.0, score)), 2)
     decision["fraud_score"] = score
@@ -236,9 +246,9 @@ def _route_after_planner(state: AgentState) -> str:
         return "decide"
     if state.get("pending_calls"):
         return "tools"
-    if state["engine"] == "rules" and not state.get("plan_queue"):
-        return "decide"
-    return "planner" if state.get("force_finalize") else "decide"
+    if state.get("plan_queue"):
+        return "planner"
+    return "decide"
 
 
 def build_agent():
@@ -281,8 +291,8 @@ def investigate(transaction: dict) -> dict:
     }
     final = _agent.invoke(initial, {"recursion_limit": 50})
     return {
-        "decision": final["decision"],
-        "reasoning_log": final["reasoning_log"],
+        "decision": final.get("decision", {}),
+        "reasoning_log": final.get("reasoning_log", []),
         "tool_results": final.get("tool_results", {}),
-        "engine": final["engine"],
+        "engine": final.get("engine", engine),
     }

@@ -12,29 +12,34 @@ An AI-powered system that not only detects fraud but investigates relationships 
 
 | Service | URL | Notes |
 |---|---|---|
-| **Backend API (Render)** | [https://autonomous-fraud-investigation.onrender.com](https://autonomous-fraud-investigation.onrender.com) | Live FastAPI service |
+| **Frontend Dashboard (Vercel)** | [https://autonomous-fraud-investigation.vercel.app](https://autonomous-fraud-investigation.vercel.app) | Live Next.js SOC console with live IST clock & real-time telemetry |
+| **Backend API (Render)** | [https://autonomous-fraud-investigation.onrender.com](https://autonomous-fraud-investigation.onrender.com) | Live FastAPI service with PostgreSQL & Neo4j Aura |
 | **Interactive API Docs** | [https://autonomous-fraud-investigation.onrender.com/docs](https://autonomous-fraud-investigation.onrender.com/docs) | Swagger UI for exploring & testing endpoints |
-| **Health Check** | [https://autonomous-fraud-investigation.onrender.com/health](https://autonomous-fraud-investigation.onrender.com/health) | Reports status & active graph backend |
-| **Frontend Dashboard** | Deployable on Vercel / Render | See deployment guide below |
+| **Health Check** | [https://autonomous-fraud-investigation.onrender.com/health](https://autonomous-fraud-investigation.onrender.com/health) | Reports status, environment, engine, & active graph backend |
 
 ---
 
 ## 🚀 Features
 
-- 🧠 **AI-Based Fraud Detection**
-  - Risk scoring using intelligent rules + ML-style logic
-- 🌐 **Graph Intelligence (Neo4j + In-Memory Fallback)**
+- 🧠 **AI-Based Fraud Detection & Bounded Scoring**
+  - Continuous risk scoring bounded `[0.0, 1.0]` with strict deterministic thresholds:
+    - `< 0.50` $\rightarrow$ **Allow** (Clean normal activity)
+    - `0.50 – 0.79` $\rightarrow$ **Hold / Review** (Suspicious patterns, high velocity, or elevated deviation)
+    - `≥ 0.80` $\rightarrow$ **Block** (Critical risk, flagged fraud ring connections, extreme amount anomalies)
+- 🌐 **Graph Intelligence (Neo4j Aura + In-Memory Fallback)**
   - Detects hidden relationships between users, devices, and transactions
 - 🔍 **Relationship-Based Fraud Analysis**
-  - Identifies fraud rings, shared devices, suspicious clusters
-- 📊 **Interactive Dashboard**
-  - Real-time visualization of fraud insights, live transaction feed, and interactive subgraph
-- 🤖 **AI Investigation Agent**
-  - Explains *why* a transaction is fraudulent using Claude or deterministic rule-engine
+  - Identifies fraud rings, shared devices, suspicious clusters, and flagged receiver beneficiaries
+- 📊 **Interactive Dashboard with Real-Time SOC Telemetry**
+  - Real-time visualization of fraud insights, live transaction feed, interactive subgraphs, and live **Asia/Kolkata (IST · UTC+05:30)** session clock
+- 🤖 **Autonomous Investigation Agent (LangGraph)**
+  - Explains *why* a transaction is fraudulent using Claude or deterministic rule-engine planner with automatic fault-tolerant degradation
 - 📚 **RAG (Retrieval-Augmented Generation)**
   - Uses past fraud cases (FAISS vector store) to ground decisions in historical context
 - 🔗 **Automation Ready (n8n)**
-  - Extendable to real-world alerting and compliance workflows
+  - Webhook ingestion pipeline with HMAC verification and compliance workflow integration
+- 💰 **Financial Safeguards**
+  - Strict input validation ($0.01 to $10,000,000.00), finite number assertions, and clean currency formatting without scientific notation
 
 ---
 

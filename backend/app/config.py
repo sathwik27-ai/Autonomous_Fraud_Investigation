@@ -10,7 +10,7 @@ class Settings(BaseSettings):
 
     # LLM — leave the key empty to run the deterministic rule-based agent
     anthropic_api_key: str = ""
-    anthropic_model: str = "claude-opus-4-8"
+    anthropic_model: str = "claude-3-5-sonnet-latest"
 
     # API auth — leave empty to disable (dev mode). Set both in production.
     api_key: str = ""
