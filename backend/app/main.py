@@ -41,5 +41,18 @@ app.add_middleware(
 )
 app.add_middleware(RateLimitMiddleware, limit=240, window_seconds=60)
 
+
+@public_router.get("/")
+def root():
+    """Root endpoint for deployment verification."""
+    return {
+        "status": "online",
+        "service": "Autonomous Fraud Investigation API",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "health": "/health",
+    }
+
+
 app.include_router(public_router)
 app.include_router(router)

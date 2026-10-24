@@ -32,10 +32,22 @@ class Settings(BaseSettings):
     fraud_block_threshold: float = 0.8
     fraud_review_threshold: float = 0.5
 
+    # CORS
+    cors_origins: str = "*"
+
     # Agent loop
     agent_max_steps: int = 8
 
     data_dir: Path = REPO_ROOT / "data"
+
+    @property
+    def sqlalchemy_database_url(self) -> str:
+        """Render, Neon, and Supabase often provide postgres:// URLs.
+        SQLAlchemy requires postgresql://."""
+        url = self.database_url
+        if url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql://", 1)
+        return url
 
 
 settings = Settings()
