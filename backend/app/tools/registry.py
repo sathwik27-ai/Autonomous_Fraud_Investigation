@@ -67,10 +67,18 @@ def check_transaction_pattern(tx: dict) -> dict:
     anomalies: list[str] = []
     avg = float(history.get("avg_amount") or 0) or 1.0
     ratio = round(amount / avg, 2)
-    if ratio >= 3:
+    if ratio >= 8:
+        anomalies.append("amount_extreme_deviation")
+    elif ratio >= 3:
         anomalies.append("amount_far_above_average")
     elif ratio >= 1.8:
         anomalies.append("amount_above_average")
+
+    receiver_id = tx.get("receiver_id") or ""
+    if receiver_id:
+        rec_hist = get_user_history(receiver_id)
+        if rec_hist.get("is_flagged") or rec_hist.get("prior_fraud_labels", 0) > 0:
+            anomalies.append("flagged_receiver")
 
     country = tx.get("country") or ""
     usual = history.get("usual_countries", [])
@@ -110,6 +118,7 @@ def check_transaction_pattern(tx: dict) -> dict:
     return {
         "tx_id": tx.get("tx_id"),
         "user_id": user_id,
+        "receiver_id": receiver_id,
         "amount": amount,
         "amount_ratio_vs_avg": ratio,
         "user_avg_amount": round(avg, 2),

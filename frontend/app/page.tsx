@@ -10,11 +10,13 @@ import {
   fetchStats,
   type FeedItem,
   type GraphData,
+  type Health,
   type InvestigateResult,
   type InvestigationDetail,
   type InvestigationSummary,
   type Stats,
 } from "@/lib/api";
+import { formatISTClock } from "@/lib/format";
 import AlertsPanel from "@/components/AlertsPanel";
 import AutomationFlow from "@/components/AutomationFlow";
 import CountryBreakdown from "@/components/CountryBreakdown";
@@ -46,10 +48,10 @@ function Clock() {
     const t = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
-  if (!now) return <span className="mono">--:--:--</span>;
+  if (!now) return <span className="mono">--:--:-- IST</span>;
   return (
-    <span className="mono">
-      {now.toISOString().slice(11, 19)} <span style={{ color: "var(--muted)" }}>UTC</span>
+    <span className="mono" title="Indian Standard Time (Asia/Kolkata)">
+      {formatISTClock(now)}
     </span>
   );
 }
@@ -76,6 +78,8 @@ export default function Console() {
   const [online, setOnline] = useState(true);
   const [latency, setLatency] = useState<number | null>(null);
   const [graphBackend, setGraphBackend] = useState<string | null>(null);
+  const [healthData, setHealthData] = useState<Health | null>(null);
+  const [healthLoading, setHealthLoading] = useState(true);
 
   const [phase, setPhase] = useState<TimelinePhase>("idle");
   const [result, setResult] = useState<InvestigateResult | null>(null);
@@ -106,16 +110,22 @@ export default function Console() {
         hasSuccess = true;
       }
       if (healthRes.status === "fulfilled") {
+        setHealthData(healthRes.value);
         setGraphBackend(healthRes.value.graph_backend);
-        setOnline(true);
-      } else if (hasSuccess) {
+        setHealthLoading(false);
         setOnline(true);
       } else {
-        setOnline(false);
-        setLatency(null);
+        setHealthLoading(false);
+        if (hasSuccess) {
+          setOnline(true);
+        } else {
+          setOnline(false);
+          setLatency(null);
+        }
       }
     } catch (err) {
       console.error("Failed to refresh dashboard data:", err);
+      setHealthLoading(false);
       setOnline(false);
       setLatency(null);
     }
@@ -160,7 +170,7 @@ export default function Console() {
   };
 
   const threat = threatLevel(investigations);
-  const engine = investigations[0]?.engine ?? null;
+  const engine = healthData?.engine ?? investigations[0]?.engine ?? null;
 
   return (
     <>
@@ -173,9 +183,15 @@ export default function Console() {
       >
         <div className="flex items-center gap-4">
           <span className="mono">FIS-CONSOLE v1.2 · build {BUILD}</span>
-          <span className="mono hidden md:inline">env: local-sim</span>
-          <span className="mono hidden md:inline">graph: {graphBackend ?? "—"}</span>
-          <span className="mono hidden lg:inline">engine: {engine ?? "rules"}</span>
+          <span className="mono hidden md:inline">
+            env: {healthLoading ? "connecting..." : healthData?.environment ? healthData.environment : online ? "production" : "unavailable"}
+          </span>
+          <span className="mono hidden md:inline">
+            graph: {healthLoading ? "connecting..." : graphBackend ? graphBackend : online ? "connecting..." : "unavailable"}
+          </span>
+          <span className="mono hidden lg:inline">
+            engine: {healthLoading ? "connecting..." : engine ? engine : online ? "rules" : "unavailable"}
+          </span>
         </div>
         <div className="flex items-center gap-4">
           <span className="mono">{latency == null ? "rtt —" : `rtt ${latency}ms`}</span>
@@ -309,7 +325,14 @@ export default function Console() {
               <AlertsPanel items={investigations} selectedId={selectedId} onSelect={setSelectedId} />
               <div className="space-y-5">
                 <CountryBreakdown items={feed} />
-                <SystemStatus online={online} latency={latency} graphBackend={graphBackend} engine={engine} />
+                <SystemStatus
+                  online={online}
+                  latency={latency}
+                  graphBackend={graphBackend}
+                  engine={engine}
+                  environment={healthData?.environment}
+                  loading={healthLoading}
+                />
               </div>
             </div>
           </>
@@ -346,7 +369,14 @@ export default function Console() {
 
         {tab === "Settings" && (
           <div className="fade-up grid gap-5 lg:grid-cols-2">
-            <SystemStatus online={online} latency={latency} graphBackend={graphBackend} engine={engine} />
+            <SystemStatus
+              online={online}
+              latency={latency}
+              graphBackend={graphBackend}
+              engine={engine}
+              environment={healthData?.environment}
+              loading={healthLoading}
+            />
             <div className="card max-w-xl p-6 text-[11px] leading-relaxed" style={{ color: "var(--muted)" }}>
               <div className="kicker mb-0.5">Configuration</div>
               <div className="mb-3 text-sm font-semibold" style={{ color: "var(--ink)" }}>Runtime</div>

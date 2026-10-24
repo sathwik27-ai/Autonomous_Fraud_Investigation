@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { InvestigationSummary } from "@/lib/api";
+import { formatUSD } from "@/lib/format";
 
 const W = 640;
 const H = 220;
@@ -84,7 +85,7 @@ export default function ScoreChart({ items }: { items: InvestigationSummary[] })
                       {d.tx_id} · {d.user_id}
                     </text>
                     <text x="8" y="30" fontSize="10" fill="var(--ink-2)" className="tabular">
-                      score {d.fraud_score.toFixed(2)} · ${d.amount}
+                      score {d.fraud_score.toFixed(2)} · {formatUSD(d.amount)}
                     </text>
                     <text x="8" y="42" fontSize="10" fill={ACTION_COLOR[d.action] ?? "var(--ink-2)"}>
                       {d.action.toUpperCase()} ({d.confidence})

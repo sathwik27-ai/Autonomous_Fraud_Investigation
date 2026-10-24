@@ -1,4 +1,5 @@
 import type { InvestigationSummary } from "@/lib/api";
+import { formatUSD } from "@/lib/format";
 import Badge from "./Badge";
 
 export default function AlertsPanel({
@@ -49,7 +50,7 @@ export default function AlertsPanel({
                 />
               </div>
               <span className="tabular" style={{ color: "var(--ink)" }}>{inv.fraud_score.toFixed(2)}</span>
-              <span className="tabular" style={{ color: "var(--muted)" }}>${inv.amount}</span>
+              <span className="tabular" style={{ color: "var(--muted)" }}>{formatUSD(inv.amount)}</span>
             </div>
           </button>
         ))}

@@ -216,7 +216,15 @@ def decide(state: AgentState) -> dict:
     decision = state.get("decision")
     if decision is None:
         decision = score_from_results(state["transaction"], state.get("tool_results", {}))
-    decision["fraud_score"] = max(0.0, min(1.0, float(decision.get("fraud_score", 0))))
+    score = float(decision.get("fraud_score", 0.0))
+    score = round(max(0.0, min(1.0, score)), 2)
+    decision["fraud_score"] = score
+    if score >= settings.fraud_block_threshold:
+        decision["action"] = "block"
+    elif score >= settings.fraud_review_threshold:
+        decision["action"] = "review"
+    else:
+        decision["action"] = "allow"
     log = _log(state, {"type": "decision", "content": decision})
     return {"decision": decision, "reasoning_log": log}
 

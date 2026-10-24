@@ -1,6 +1,7 @@
 "use client";
 
 import type { FeedItem } from "@/lib/api";
+import { formatUSD } from "@/lib/format";
 
 const STATUS_DOT: Record<string, string> = {
   clean: "var(--status-good)",
@@ -24,7 +25,7 @@ export default function Ticker({ items }: { items: FeedItem[] }) {
       {t.tx_id}
       <span style={{ color: "var(--muted)" }}>{t.user_id}{t.country ? ` · ${t.country}` : ""}</span>
       <span className="tabular font-semibold" style={{ color: "var(--ink)" }}>
-        ${t.amount.toFixed(2)}
+        {formatUSD(t.amount)}
       </span>
       <span style={{ color: "var(--muted)" }}>{t.merchant_category}</span>
     </span>

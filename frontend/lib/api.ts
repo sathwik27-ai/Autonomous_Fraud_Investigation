@@ -108,6 +108,9 @@ export async function investigate(payload: InvestigatePayload): Promise<Investig
 export interface Health {
   status: string;
   graph_backend: string;
+  environment?: string;
+  engine?: string;
+  version?: string;
 }
 
 export const fetchHealth = () => get<Health>("/health");

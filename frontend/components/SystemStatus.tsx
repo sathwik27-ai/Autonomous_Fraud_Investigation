@@ -7,19 +7,36 @@ export default function SystemStatus({
   latency,
   graphBackend,
   engine,
+  environment,
+  loading = false,
 }: {
   online: boolean;
   latency: number | null;
   graphBackend: string | null;
   engine: string | null;
+  environment?: string | null;
+  loading?: boolean;
 }) {
   const rows: { label: string; value: string; ok?: boolean }[] = [
     { label: "API endpoint", value: API.replace(/^https?:\/\//, ""), ok: online },
+    {
+      label: "Environment",
+      value: loading ? "connecting..." : environment ? environment : online ? "production" : "unavailable",
+      ok: online,
+    },
     { label: "Round-trip latency", value: latency == null ? "—" : `${latency} ms`, ok: latency != null && latency < 500 },
-    { label: "Graph backend", value: graphBackend ?? "—", ok: graphBackend != null },
-    { label: "Decision engine", value: engine ?? "rules", ok: true },
-    { label: "RAG index", value: "FAISS · 30 cases", ok: true },
-    { label: "Thresholds", value: "review 0.50 · block 0.80" },
+    {
+      label: "Graph backend",
+      value: loading ? "connecting..." : graphBackend ? graphBackend : online ? "connecting..." : "unavailable",
+      ok: graphBackend != null,
+    },
+    {
+      label: "Decision engine",
+      value: loading ? "connecting..." : engine ? engine : online ? "rules" : "unavailable",
+      ok: engine != null || online,
+    },
+    { label: "Timezone", value: "Asia/Kolkata (IST · UTC+05:30)", ok: true },
+    { label: "Thresholds", value: "review ≥ 0.50 · block ≥ 0.80" },
   ];
 
   return (

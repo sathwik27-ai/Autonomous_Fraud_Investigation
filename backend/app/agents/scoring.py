@@ -9,6 +9,7 @@ from __future__ import annotations
 from ..config import settings
 
 ANOMALY_WEIGHTS = {
+    "amount_extreme_deviation": 0.28,
     "amount_far_above_average": 0.20,
     "amount_above_average": 0.10,
     "unusual_country": 0.12,
@@ -16,6 +17,7 @@ ANOMALY_WEIGHTS = {
     "high_risk_category": 0.12,
     "round_amount": 0.05,
     "high_velocity": 0.15,
+    "flagged_receiver": 0.25,
 }
 
 
@@ -36,9 +38,17 @@ def score_from_results(tx: dict, results: dict) -> dict:
         reasons.append("Sender has no history on file (unknown account)")
 
     ratio = pattern.get("amount_ratio_vs_avg")
-    for anomaly in pattern.get("anomalies", []):
+    anomalies = pattern.get("anomalies", [])
+    for anomaly in anomalies:
         score += ANOMALY_WEIGHTS.get(anomaly, 0.05)
-    if ratio and ratio >= 1.8:
+
+    if "flagged_receiver" in anomalies:
+        reasons.append(f"Beneficiary/receiver {pattern.get('receiver_id') or tx.get('receiver_id')} is flagged for illicit activity or prior fraud")
+    if "amount_extreme_deviation" in anomalies:
+        reasons.append(
+            f"Critical amount anomaly: transaction is {ratio}x the sender's average of ${pattern.get('user_avg_amount')}"
+        )
+    elif ratio and ratio >= 1.8:
         reasons.append(
             f"Transaction is {ratio}x the sender's average of ${pattern.get('user_avg_amount')}"
         )
@@ -69,7 +79,12 @@ def score_from_results(tx: dict, results: dict) -> dict:
             f"Device {d['device_id']} is shared with {len(d['shared_with'])} other accounts"
         )
 
-    matches = cases.get("matches", [])
+    if isinstance(cases, dict):
+        matches = cases.get("matches", [])
+    elif isinstance(cases, list):
+        matches = cases
+    else:
+        matches = []
     if matches and matches[0]["similarity"] >= 0.35:
         top = matches[0]
         score += 0.15
@@ -78,7 +93,7 @@ def score_from_results(tx: dict, results: dict) -> dict:
             f"(case {top['case_id']}, similarity {top['similarity']:.2f})"
         )
 
-    score = round(min(score, 0.99), 2)
+    score = round(max(0.0, min(float(score), 1.0)), 2)
 
     if score >= settings.fraud_block_threshold:
         action = "block"

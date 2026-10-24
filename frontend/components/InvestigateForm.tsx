@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { investigate, type InvestigateResult } from "@/lib/api";
+import { getIndiaInputDateTime, parseISTInputToISO } from "@/lib/format";
 
 const CATEGORIES = [
   "crypto_exchange",
@@ -16,12 +17,6 @@ const CATEGORIES = [
 
 const COUNTRIES = ["IN", "US", "GB", "SG", "AE", "NG", "BR", "DE"];
 
-function localNowISO(): string {
-  const d = new Date();
-  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-  return d.toISOString().slice(0, 16);
-}
-
 export default function InvestigateForm({
   onStart,
   onResult,
@@ -35,22 +30,32 @@ export default function InvestigateForm({
 }) {
   const [amount, setAmount] = useState("4800");
   const [country, setCountry] = useState("AE");
-  const [time, setTime] = useState(localNowISO());
+  const [time, setTime] = useState(() => getIndiaInputDateTime());
   const [userId, setUserId] = useState("U001");
   const [receiverId, setReceiverId] = useState("U033");
   const [category, setCategory] = useState("crypto_exchange");
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount) || !isFinite(parsedAmount) || parsedAmount <= 0) {
+      onError("Amount must be a positive finite number greater than 0");
+      return;
+    }
+    if (parsedAmount > 10_000_000) {
+      onError("Amount exceeds maximum allowed limit ($10,000,000)");
+      return;
+    }
+
     onStart();
     try {
       const result = await investigate({
         user_id: userId.trim() || "U001",
         receiver_id: receiverId.trim(),
-        amount: parseFloat(amount) || 0,
+        amount: parsedAmount,
         country,
         merchant_category: category,
-        timestamp: time ? new Date(time).toISOString() : undefined,
+        timestamp: time ? parseISTInputToISO(time) : undefined,
       });
       onResult(result);
     } catch (err) {
@@ -73,7 +78,8 @@ export default function InvestigateForm({
           <input
             className="field tabular"
             type="number"
-            min="0"
+            min="0.01"
+            max="10000000"
             step="0.01"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
@@ -94,7 +100,7 @@ export default function InvestigateForm({
 
         <label className="block">
           <span className="mb-1 block text-[11px] uppercase tracking-wide" style={{ color: "var(--muted)" }}>
-            Time
+            Time (IST · Asia/Kolkata)
           </span>
           <input
             className="field"

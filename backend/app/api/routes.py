@@ -1,16 +1,19 @@
 from __future__ import annotations
 
 import json
+import math
+import os
 import uuid
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..agents.explain import format_explanation
 from ..agents.investigator import investigate
+from ..config import settings
 from ..core.security import require_api_key, verify_webhook_signature
 from ..db.models import Investigation, TransactionEvent
 from ..db.session import get_db
@@ -26,13 +29,27 @@ class TransactionIn(BaseModel):
     tx_id: str = Field(default_factory=lambda: f"TX-{uuid.uuid4().hex[:8].upper()}")
     user_id: str
     receiver_id: str = ""
-    amount: float
+    amount: float = Field(
+        ...,
+        gt=0,
+        le=10_000_000,
+        description="Transaction amount in USD, must be positive, finite, and <= 10,000,000",
+    )
     currency: str = "USD"
     country: str = ""
     device_id: str = ""
     merchant_category: str = ""
     timestamp: str = ""
     prefilter_risk: float = 0.0
+
+    @field_validator("amount")
+    @classmethod
+    def validate_amount(cls, v: float) -> float:
+        if not math.isfinite(v) or v <= 0:
+            raise ValueError("Amount must be a finite, positive number")
+        if v > 10_000_000:
+            raise ValueError("Amount exceeds maximum allowed limit ($10,000,000)")
+        return round(float(v), 2)
 
 
 def _record_event(db: Session, tx: TransactionIn, status: str) -> TransactionEvent:
@@ -58,7 +75,15 @@ def _record_event(db: Session, tx: TransactionIn, status: str) -> TransactionEve
 @public_router.get("/health")
 def health():
     """Unauthenticated liveness probe — safe to expose to load balancers."""
-    return {"status": "ok", "graph_backend": get_graph().backend}
+    engine = "claude" if settings.anthropic_api_key else "rules"
+    env_name = os.environ.get("ENVIRONMENT") or ("production" if os.environ.get("RENDER") or "render.com" in settings.database_url or "neon.tech" in settings.database_url else "local-dev")
+    return {
+        "status": "ok",
+        "environment": env_name,
+        "graph_backend": get_graph().backend,
+        "engine": engine,
+        "version": "1.2.0",
+    }
 
 
 @router.post("/transactions", dependencies=[Depends(verify_webhook_signature)])
@@ -83,6 +108,21 @@ def investigate_transaction(tx: TransactionIn, db: Session = Depends(get_db)):
 
     result = investigate(tx.model_dump())
     decision = result["decision"]
+
+    # Enforce strict score bounds and action threshold mapping
+    score = float(decision.get("fraud_score", 0.0))
+    if not math.isfinite(score):
+        score = 0.0
+    score = round(max(0.0, min(1.0, score)), 2)
+    decision["fraud_score"] = score
+
+    if score >= settings.fraud_block_threshold:
+        decision["action"] = "block"
+    elif score >= settings.fraud_review_threshold:
+        decision["action"] = "review"
+    else:
+        decision["action"] = "allow"
+
     explanation = format_explanation(decision)
 
     event.status = decision["action"]
@@ -128,7 +168,8 @@ def transaction_feed(limit: int = 50, db: Session = Depends(get_db)):
     )
     return [{
         "tx_id": r.tx_id, "user_id": r.user_id, "receiver_id": r.receiver_id,
-        "amount": r.amount, "country": r.country, "device_id": r.device_id,
+        "amount": round(float(r.amount), 2) if (r.amount is not None and math.isfinite(r.amount)) else 0.0,
+        "country": r.country, "device_id": r.device_id,
         "merchant_category": r.merchant_category, "status": r.status,
         "prefilter_risk": r.prefilter_risk,
         "created_at": r.created_at.isoformat(),
@@ -144,7 +185,8 @@ def list_investigations(limit: int = 25, db: Session = Depends(get_db)):
         .all()
     )
     return [{
-        "id": r.id, "tx_id": r.tx_id, "user_id": r.user_id, "amount": r.amount,
+        "id": r.id, "tx_id": r.tx_id, "user_id": r.user_id,
+        "amount": round(float(r.amount), 2) if (r.amount is not None and math.isfinite(r.amount)) else 0.0,
         "fraud_score": r.fraud_score, "confidence": r.confidence, "action": r.action,
         "reasons": json.loads(r.reasons), "explanation": r.explanation,
         "engine": r.engine, "created_at": r.created_at.isoformat(),

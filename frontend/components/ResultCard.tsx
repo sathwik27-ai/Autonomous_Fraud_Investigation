@@ -41,7 +41,7 @@ export default function ResultCard({
           className="rounded-lg px-3 py-2 text-xs"
           style={{ border: "1px solid var(--status-critical)", color: "var(--ink-2)" }}
         >
-          ⚠ {error} — is the backend running on port 8000?
+          ⚠ {error} — please check the backend connection.
         </div>
       </div>
     );
