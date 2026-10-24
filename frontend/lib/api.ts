@@ -1,7 +1,15 @@
+declare const process: {
+  env?: {
+    NEXT_PUBLIC_API_URL?: string;
+    NEXT_PUBLIC_API_KEY?: string;
+    [key: string]: string | undefined;
+  };
+};
+
 const DEFAULT_API_URL = "https://fraud-investigation-backend.onrender.com";
-const rawApi = process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_URL;
+const rawApi = (typeof process !== "undefined" && process?.env?.NEXT_PUBLIC_API_URL) || DEFAULT_API_URL;
 export const API = rawApi.replace(/\/+$/, "");
-const API_KEY = process.env.NEXT_PUBLIC_API_KEY ?? "";
+const API_KEY = (typeof process !== "undefined" && process?.env?.NEXT_PUBLIC_API_KEY) ?? "";
 
 function authHeaders(extra?: Record<string, string>): Record<string, string> {
   const headers: Record<string, string> = { ...(extra ?? {}) };
@@ -90,7 +98,11 @@ export async function investigate(payload: InvestigatePayload): Promise<Investig
   });
   if (!res.ok) throw new Error(`/investigate: ${res.status}`);
   const body = await res.json();
-  return { ...body, id: body.investigation_id };
+  return {
+    ...body,
+    id: body.investigation_id ?? body.id ?? Date.now(),
+    created_at: body.created_at ?? new Date().toISOString(),
+  };
 }
 
 export interface Health {
