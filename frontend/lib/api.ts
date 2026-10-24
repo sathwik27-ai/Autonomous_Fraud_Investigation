@@ -108,6 +108,7 @@ export async function investigate(payload: InvestigatePayload): Promise<Investig
 export interface Health {
   status: string;
   graph_backend: string;
+  graph_connected?: boolean;
   environment?: string;
   engine?: string;
   version?: string;

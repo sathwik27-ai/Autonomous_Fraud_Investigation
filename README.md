@@ -1,288 +1,303 @@
 # 🛡️ Autonomous Fraud Investigation System
 
-An AI-powered system that not only detects fraud but investigates relationships between entities using Graph Intelligence, AI Agents, and RAG-based reasoning.
+An AI-powered system that investigates complex fraud relationships between financial entities using Graph Intelligence (Neo4j Aura), Autonomous AI Agents (LangGraph), and Vector RAG (FAISS).
 
-> ⚡ Unlike traditional fraud detection systems that only score transactions, this system **analyzes networks, explains decisions, and simulates real-world fintech investigation workflows**.
+> ⚡ Unlike traditional rule-based filters that score transactions in complete isolation, this system **analyzes multi-hop entity graphs, explains investigations with audit trails, and coordinates event-driven fintech workflows**.
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![Python: 3.11+](https://img.shields.io/badge/Python-3.11+-blue.svg)
+![Next.js: 15](https://img.shields.io/badge/Next.js-15-black.svg)
+![FastAPI: 1.0](https://img.shields.io/badge/FastAPI-1.0-teal.svg)
 
 ---
 
 ## 🌐 Live Deployments & Endpoints
 
-| Service | URL | Notes |
+| Service | URL | Status & Description |
 |---|---|---|
-| **Frontend Dashboard (Vercel)** | [https://autonomous-fraud-investigation.vercel.app](https://autonomous-fraud-investigation.vercel.app) | Live Next.js SOC console with live IST clock & real-time telemetry |
-| **Backend API (Render)** | [https://autonomous-fraud-investigation.onrender.com](https://autonomous-fraud-investigation.onrender.com) | Live FastAPI service with PostgreSQL & Neo4j Aura |
-| **Interactive API Docs** | [https://autonomous-fraud-investigation.onrender.com/docs](https://autonomous-fraud-investigation.onrender.com/docs) | Swagger UI for exploring & testing endpoints |
-| **Health Check** | [https://autonomous-fraud-investigation.onrender.com/health](https://autonomous-fraud-investigation.onrender.com/health) | Reports status, environment, engine, & active graph backend |
+| **Frontend SOC Console (Vercel)** | [https://autonomous-fraud-investigation.vercel.app](https://autonomous-fraud-investigation.vercel.app) | Live Next.js SOC console with live IST clock, telemetry, network graphs & alert triage |
+| **Backend API (Render)** | [https://autonomous-fraud-investigation.onrender.com](https://autonomous-fraud-investigation.onrender.com) | Live FastAPI service with PostgreSQL database & Neo4j Aura integration |
+| **Interactive API Documentation** | [https://autonomous-fraud-investigation.onrender.com/docs](https://autonomous-fraud-investigation.onrender.com/docs) | OpenAPI / Swagger UI for testing endpoints and schemas |
+| **Production Health Probe** | [https://autonomous-fraud-investigation.onrender.com/health](https://autonomous-fraud-investigation.onrender.com/health) | Reports status, environment, active engine, and verified graph backend connectivity |
 
 ---
 
-## 🚀 Features
+## 🧠 Problem Statement & Motivation
 
-- 🧠 **AI-Based Fraud Detection & Bounded Scoring**
-  - Continuous risk scoring bounded `[0.0, 1.0]` with strict deterministic thresholds:
-    - `< 0.50` $\rightarrow$ **Allow** (Clean normal activity)
-    - `0.50 – 0.79` $\rightarrow$ **Hold / Review** (Suspicious patterns, high velocity, or elevated deviation)
-    - `≥ 0.80` $\rightarrow$ **Block** (Critical risk, flagged fraud ring connections, extreme amount anomalies)
-- 🌐 **Graph Intelligence (Neo4j Aura + In-Memory Fallback)**
-  - Detects hidden relationships between users, devices, and transactions
-- 🔍 **Relationship-Based Fraud Analysis**
-  - Identifies fraud rings, shared devices, suspicious clusters, and flagged receiver beneficiaries
-- 📊 **Interactive Dashboard with Real-Time SOC Telemetry**
-  - Real-time visualization of fraud insights, live transaction feed, interactive subgraphs, and live **Asia/Kolkata (IST · UTC+05:30)** session clock
-- 🤖 **Autonomous Investigation Agent (LangGraph)**
-  - Explains *why* a transaction is fraudulent using Claude or deterministic rule-engine planner with automatic fault-tolerant degradation
-- 📚 **RAG (Retrieval-Augmented Generation)**
-  - Uses past fraud cases (FAISS vector store) to ground decisions in historical context
-- 🔗 **Automation Ready (n8n)**
-  - Webhook ingestion pipeline with HMAC verification and compliance workflow integration
-- 💰 **Financial Safeguards**
-  - Strict input validation ($0.01 to $10,000,000.00), finite number assertions, and clean currency formatting without scientific notation
+Traditional financial fraud detection architectures suffer from critical structural weaknesses:
+1. **Isolated Transaction Evaluation**: Scored individually without relationship context or historical pattern matching across related accounts.
+2. **High False-Positive Overhead**: Static threshold rules flag legitimate high-value customers while missing sophisticated multi-account velocity attacks.
+3. **Black-Box Opacity**: Traditional ML classifiers output a probability without human-readable reasoning or actionable evidence for compliance officers.
+
+### Modern Solution Architecture
+Modern risk engineering combines:
+- **Graph Intelligence**: Detecting entity sharing, circular fund movement, and multi-hop connections to known fraudulent syndicates.
+- **Agentic AI Investigation**: Autonomous orchestration of tools (baseline profiling, anomaly checks, graph neighborhood analysis, and similar case vector matching).
+- **RAG Grounding**: Case-law vector search ensuring investigations cite historical typologies (e.g. romance scams, crypto off-ramps, bust-out fraud).
 
 ---
 
-## 🧠 Problem Statement
+## 🚀 Key Features
 
-### Traditional fraud detection systems:
-- Work on **isolated transactions**
-- Generate **high false positives**
-- Lack **explainability**
-
-### Modern systems are shifting toward:
-- Graph-based fraud detection
-- AI-driven investigation pipelines
-- Explainable decision systems
-
-👉 This project simulates that **next-generation fraud investigation system**.
+- **Continuous Fraud Risk Scoring & Deterministic Decision Thresholds**:
+  - Risk score strictly bounded in `[0.0, 1.0]`.
+  - `< 0.50` $\rightarrow$ **Allow** (Normal baseline activity).
+  - `0.50 – 0.79` $\rightarrow$ **Hold / Manual Review** (Elevated anomaly, high velocity, or geographical deviation).
+  - `≥ 0.80` $\rightarrow$ **Block + Manual Review** (Severe risk, direct fraud ring association, flagged beneficiary).
+- **Graph Intelligence (Neo4j Aura + In-Memory Fallback)**:
+  - Models users, devices, and financial transfers as a property graph.
+  - Cypher-powered traversal finds shared devices, transfer chains, and connections to flagged bad actors.
+  - Resilient design: automatically falls back to an in-memory graph from CSV datasets if Neo4j is offline, and self-heals when reconnected.
+- **Dual Investigation Engine**:
+  - **Claude-Powered Planner**: Multi-step LangGraph ReAct agent that autonomously selects investigation tools and constructs structured findings when an Anthropic API key is provided.
+  - **Deterministic Rules Planner**: Zero-dependency weighted heuristic fallback that runs identically out-of-the-box without requiring third-party API keys.
+- **RAG Knowledge Base (FAISS)**:
+  - 30 indexed historical fraud typologies with vector embeddings for semantic matching.
+- **Real-Time SOC Telemetry & Dashboard**:
+  - Live **Asia/Kolkata (IST · UTC+05:30)** session clock and unambiguous timestamps.
+  - Interactive force-directed network subgraphs and detailed agent reasoning step logs.
+  - Financial amounts formatted safely in standard USD notation ($0.01 to $10,000,000.00).
 
 ---
 
-## 🏗️ System Architecture
+## 🏗️ System Architecture & Data Flow
+
+```mermaid
+flowchart TD
+    subgraph Client["Frontend (Next.js 15 on Vercel)"]
+        UI["SOC Dashboard / Console"]
+        Form["Investigation Form"]
+        GraphUI["Network Subgraph Viewer"]
+    end
+
+    subgraph Gateway["Backend (FastAPI on Render)"]
+        Routes["API Router / Ingestion"]
+        RateLimit["Rate Limiter (240 req/min)"]
+        Auth["Security Layer (API Key / Webhook HMAC)"]
+    end
+
+    subgraph CoreEngine["Agentic Investigation Layer"]
+        Planner{"Planner Engine"}
+        ClaudeEngine["Claude 3.7 / 3.5 Sonnet (LangGraph)"]
+        RulesEngine["Deterministic Weighted Engine (Scoring)"]
+    end
+
+    subgraph DataStorage["Data & Intelligence Layer"]
+        PG[("PostgreSQL: Events & Investigations")]
+        Neo4j[("Neo4j AuraDB / In-Memory Graph")]
+        FAISS[("FAISS Vector Index: 30 Fraud Typologies")]
+        CSVs[("Dataset CSVs: Users, Devices, Transactions")]
+    end
+
+    UI -->|REST / HTTPS| Routes
+    Form -->|POST /investigate| Routes
+    Routes --> RateLimit --> Auth
+    Auth --> Planner
+    Planner -->|ANTHROPIC_API_KEY Set| ClaudeEngine
+    Planner -->|Fallback / Default| RulesEngine
+    ClaudeEngine & RulesEngine -->|Execute Tools| Neo4j & FAISS & CSVs
+    Routes -->|Persist History| PG
+    GraphUI -->|GET /graph/:userId| Neo4j
+```
+
+---
+
+## 💻 Technology Stack
+
+| Layer | Technologies |
+|---|---|
+| **Frontend** | Next.js 15 (App Router), React 19, TypeScript, Vanilla CSS & Tailwind utilities, Canvas Particles & Globe |
+| **Backend** | FastAPI, Python 3.11+, Pydantic v2, Uvicorn, Starlette |
+| **Databases** | PostgreSQL (Relational schema via SQLAlchemy), Neo4j Aura (Graph DB), In-memory graph fallback |
+| **Agent & RAG** | LangGraph, Anthropic Python SDK, FAISS (Facebook AI Similarity Search), Sentence Embeddings |
+| **DevOps & Cloud** | Docker, Docker Compose, Render (Backend API), Vercel (Frontend), GitHub Actions |
+
+---
+
+## ⚖️ Fraud Scoring & Decision Thresholds
+
+The backend evaluates risk factors across 4 distinct intelligence sources:
+1. **Sender Baseline**: Historical 90-day volume, average amount, usual merchant categories, and signup longevity.
+2. **Transaction Pattern**: Deviation ratio vs. average amount, unusual country of origin, off-hours initiation, and rapid 10-minute velocity.
+3. **Graph Intelligence**: Shared physical devices ($N \ge 2$), transfer hops, and direct links to flagged accounts.
+4. **Vector RAG**: Cosine similarity against known fraud patterns (similarity $\ge 0.35$ adds contextual penalty).
 
 ```
-Frontend (Next.js 15 Dashboard on Vercel)
-         │  (HTTPS / REST)
-         ▼
-Backend API (FastAPI on Render: https://autonomous-fraud-investigation.onrender.com)
-   ┌─────┴─────────────────────────┐
-   │                               │
-   ▼                               ▼
-Relational DB (PostgreSQL)    Graph DB (Neo4j / AuraDB / Memory Fallback)
-   │                               │
-   └───────────────┬───────────────┘
-                   ▼
-      Agentic AI Engine (Claude / Rules) + RAG (FAISS)
+Score Range:    0.00 ──────────────── 0.49 ────── 0.50 ──────────────── 0.79 ────── 0.80 ──────────────── 1.00
+Action:                  ALLOW                        HOLD / MANUAL REVIEW                     BLOCK
+Meaning:         Low risk / Baseline verified         Suspicious anomaly / Velocity spike     Critical syndicate / Ring
 ```
 
 ---
 
-## 📊 Workflow
+## 🤖 AI / Agent Workflow & Dual Engine Execution
 
-1. User submits transaction / `user_id`
-2. Backend calculates fraud risk score
-3. Graph DB analyzes relationships and shared entities
-4. RAG retrieves similar historical fraud cases
-5. AI Agent synthesizes evidence and generates structured explanation
-6. Frontend displays:
-   - Risk Score & Action (Approve / Review / Block)
-   - Graph Intelligence & Cluster Links
-   - Full Investigation Report & Reasoning Log
+1. **Claude-Powered Mode**:
+   - Activated when `ANTHROPIC_API_KEY` is configured in backend environment.
+   - Claude evaluates incoming transaction parameters, dynamically queries tools via the tool registry (`get_user_history`, `check_transaction_pattern`, `get_linked_accounts`, `search_similar_cases`), and submits a structured `finalize_decision`.
+2. **Deterministic Rules Mode (Default)**:
+   - When `ANTHROPIC_API_KEY` is unset or if the Anthropic API encounters network interruption, the system degrades seamlessly to `_rules_planner`.
+   - Executes the deterministic pipeline (`RULES_PLAN`), computes weighted anomaly scores, and generates human-readable audit explanations without crashing.
 
 ---
 
-## 🖥️ Tech Stack
+## 🔍 Graph Intelligence & Neo4j Integration
 
-### 🔹 Backend
-- FastAPI
-- Python 3.11+ / 3.12
-- SQLAlchemy & Alembic
-- FAISS (Vector Store for RAG)
-
-### 🔹 Frontend
-- Next.js 15
-- React 19
-- TypeScript
-- Tailwind CSS
-
-### 🔹 Databases
-- PostgreSQL (Relational Data & Investigation History)
-- Neo4j (Graph Database for Entity Links & Fraud Rings)
-
-### 🔹 AI Layer
-- RAG (Custom embeddings + FAISS)
-- AI Agents (Claude / Deterministic Weighted Rule Engine)
-
-### 🔹 DevOps
-- Docker & Docker Compose
-- Render (Backend deployment)
-- Vercel (Frontend deployment)
+- **Entities**:
+  - `User`: Account ID, flagged status.
+  - `Device`: Unique device hardware signature.
+- **Relationships**:
+  - `(User)-[:USED_DEVICE]->(Device)`
+  - `(User)-[:TRANSFERRED_TO]->(User)`
+- **Live Incremental Updates**:
+  - When new transactions are processed via `/transactions` or `/investigate`, the backend merges new nodes and updates relationship counts in real time.
+- **Failover**:
+  - If Neo4j Aura is unreachable, queries seamlessly execute against the in-memory graph constructed from `data/*.csv`. The backend periodically checks Neo4j connectivity and automatically reconnects once live.
 
 ---
 
-## ☁️ Cloud Deployment Guide
+## 🗄️ Database Schema & Entities
 
-### 1. Deploying the Frontend (Vercel)
-
-The frontend is built with **Next.js 15** and includes `vercel.json` for zero-configuration deployment on **Vercel**:
-
-1. Go to [Vercel](https://vercel.com) and click **"Add New Project"**.
-2. Select your repository: `https://github.com/sathwik27-ai/Autonomous_Fraud_Investigation.git`.
-3. Configure the project:
-   - **Root Directory**: `frontend`
-   - **Framework Preset**: Next.js
-4. In **Environment Variables**, add:
-   ```env
-   NEXT_PUBLIC_API_URL=https://autonomous-fraud-investigation.onrender.com
-   NEXT_PUBLIC_API_KEY=
-   ```
-5. Click **Deploy**. Your dashboard will be live on `https://your-project.vercel.app`!
+The relational database (PostgreSQL in production, SQLite in local dev) tracks two primary models:
+1. **`TransactionEvent`**:
+   - Raw ingestion records (`tx_id`, `user_id`, `receiver_id`, `amount`, `country`, `device_id`, `merchant_category`, `prefilter_risk`, `status`, `timestamp`).
+2. **`Investigation`**:
+   - Audit trail records (`id`, `tx_id`, `user_id`, `amount`, `fraud_score`, `confidence`, `action`, `reasons`, `reasoning_log`, `explanation`, `engine`, `created_at`).
 
 ---
 
-### 2. Connecting Cloud PostgreSQL (Render / Neon / Supabase)
+## 📂 Repository Structure
 
-By default, the backend operates on SQLite or fallback storage. To connect persistent PostgreSQL:
-
-1. Create a free PostgreSQL instance on **[Render](https://render.com)**, **[Neon.tech](https://neon.tech)**, or **[Supabase](https://supabase.com)**.
-2. Copy the connection string. Both `postgresql://` and `postgres://` formats are supported.
-3. In your **Render Dashboard** → Backend Web Service (`autonomous-fraud-investigation`) → **Environment**:
-   - Add `DATABASE_URL`:
-     ```env
-     DATABASE_URL=postgresql://user:password@hostname:5432/dbname?sslmode=require
-     ```
-4. Save and restart. The backend automatically initializes and verifies all tables (`investigations`, `transaction_events`) on startup!
-
----
-
-### 3. Connecting Cloud Neo4j (Neo4j AuraDB Free)
-
-The backend has an automatic fallback to an in-memory graph built from datasets (`users.csv`, `user_devices.csv`, `transactions.csv`).
-
-To connect a managed cloud Neo4j instance:
-
-1. Sign up for **[Neo4j AuraDB Free](https://neo4j.com/cloud/platform/aura-graph-database/)** (100% free cloud instance).
-2. Create an instance and save the credentials.
-3. In your **Render Dashboard** → Backend Service → **Environment**, add:
-   ```env
-   NEO4J_URI=neo4j+s://<your-instance-id>.databases.neo4j.io
-   NEO4J_USER=neo4j
-   NEO4J_PASSWORD=<your-auradb-password>
-   ```
-4. Trigger a restart. When verified, `/health` will report:
-   ```json
-   {"status": "ok", "graph_backend": "neo4j"}
-   ```
+```
+FraudDetection/
+├── backend/
+│   ├── alembic/                 # Database migrations
+│   ├── app/
+│   │   ├── agents/              # LangGraph ReAct agent & rules scoring engine
+│   │   ├── api/                 # FastAPI routes (/health, /investigate, /stats)
+│   │   ├── core/                # Rate limiter and HMAC/API-key security
+│   │   ├── db/                  # SQLAlchemy models and session initialization
+│   │   ├── graph/               # Neo4j client and in-memory graph fallback
+│   │   ├── rag/                 # FAISS vector store and embedding engine
+│   │   └── tools/               # Registry for profiling and pattern tools
+│   ├── tests/                   # Regression and boundary unit tests
+│   ├── Dockerfile
+│   └── requirements.txt
+├── frontend/
+│   ├── app/                     # Next.js 15 App Router pages & layout
+│   ├── components/              # SystemStatus, NetworkGraph, ScoreChart, LiveFeed
+│   ├── lib/                     # API client and IST formatting utilities
+│   ├── Dockerfile
+│   └── package.json
+├── data/                        # Sample users, devices, and transaction datasets
+├── n8n/                         # Event automation workflow configurations
+├── docker-compose.yml           # Complete multi-service orchestration
+└── README.md
+```
 
 ---
 
-### 4. Backend Environment Variables Reference
+## 🛠️ Local Setup & Installation
 
-| Variable | Required | Default | Description |
-|---|---|---|---|
-| `DATABASE_URL` | No | `sqlite:///./fraud.db` | PostgreSQL connection URL (Render/Neon/Supabase) |
-| `NEO4J_URI` | No | `bolt://localhost:7687` | Neo4j URI (`neo4j+s://` for AuraDB, `bolt://` for local) |
-| `NEO4J_USER` | No | `neo4j` | Neo4j username |
-| `NEO4J_PASSWORD` | No | `fraudgraph` | Neo4j password |
-| `CORS_ORIGINS` | No | `*` | Allowed origins (comma-separated or `*` for all) |
-| `ANTHROPIC_API_KEY` | No | `""` | Claude API key (if empty, uses deterministic rule engine) |
-| `API_KEY` | No | `""` | Optional secret key for endpoint protection (`X-API-Key`) |
-| `WEBHOOK_SECRET` | No | `""` | Optional HMAC key for secure ingestion webhooks |
+### Option A: Manual Setup
+
+#### 1. Backend Setup
+```bash
+# Navigate to backend directory
+cd backend
+
+# Create and activate virtual environment
+python -m venv .venv
+# Windows:
+.venv\Scripts\activate
+# Linux/macOS:
+source .venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run backend development server
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+#### 2. Frontend Setup
+```bash
+# Navigate to frontend directory
+cd frontend
+
+# Install dependencies
+npm install
+
+# Run frontend development server
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## 💻 Local Setup (Docker Compose)
-
-### 🔹 Prerequisites
-- Docker Desktop
-- Git
-
-### 🔹 Run the Project Locally
+### Option B: Docker Compose (All-in-One)
 
 ```bash
-# 1. Clone the repository
+# Clone the repository
 git clone https://github.com/sathwik27-ai/Autonomous_Fraud_Investigation.git
-cd Autonomous_Fraud_Investigation
+cd Autonomous_Fraud_Investigation/FraudDetection
 
-# 2. Setup environment file
+# Copy environment template
 cp .env.example .env
 
-# 3. Start all services (Backend, Frontend, Postgres, Neo4j, n8n)
-docker compose up --build
+# Spin up all containers (Backend, Frontend, PostgreSQL, Neo4j)
+docker compose up --build -d
 ```
 
-### 🔹 Access Local Applications
-
-- 🌐 **Frontend Dashboard**: [http://localhost:3000](http://localhost:3000)
-- ⚙️ **Backend API & Swagger Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
-- 🧠 **Neo4j Browser**: [http://localhost:7474](http://localhost:7474)
-- 🔁 **n8n Automation**: [http://localhost:5678](http://localhost:5678)
+- **Frontend Console**: [http://localhost:3000](http://localhost:3000)
+- **Backend API & Swagger**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Neo4j Browser**: [http://localhost:7474](http://localhost:7474)
 
 ---
 
-## 📈 Impact
+## 🧪 Testing Instructions
 
-1. Detects fraud beyond rule-based systems
-2. Uses graph relationships instead of isolated data
-3. Reduces false positives using network intelligence
-4. Simulates real fintech fraud investigation pipelines
-5. Modern fraud systems increasingly rely on:
-   - Graph analysis
-   - AI reasoning
-   - Real-time pipelines
+Run the backend test suite covering boundary thresholds, extreme amount validation, IST timezone handling, and health endpoints:
 
----
+```bash
+# From the FraudDetection directory:
+# Windows (PowerShell):
+$env:PYTHONPATH="backend"; python -m unittest backend/tests/test_production_issues.py
 
-## 🔥 Key Highlight
-
-💡 “This system doesn’t just detect fraud — it investigates it.”
-
----
-
-## 🧪 Example Use Case & Decision Output
-
-1. User A makes a transaction.
-2. System detects:
-   - Same device used by 3 accounts
-   - Suspicious transfer pattern
-3. Graph reveals fraud ring.
-4. AI explains decision:
-
+# Linux / macOS:
+PYTHONPATH=backend python -m unittest backend/tests/test_production_issues.py
 ```
-Fraud Score: 0.99
-Confidence: High
-Action: Block + Manual Review
 
-Reasons:
-1. Transaction is 8.54x the sender's average of $304.42
-2. Transaction from AE — outside the sender's usual countries
-3. Initiated at an unusual hour (2:00)
-4. High-risk merchant category: crypto_exchange
-5. Graph link to 5 flagged account(s): U020, U033, U051, U052
-6. Matches known fraud pattern 'crypto_offramp' (case C014, similarity 0.41)
+Run frontend linting and type checking:
+```bash
+cd frontend
+npm run build
 ```
 
 ---
 
-## 🧩 Future Improvements
+## 🔐 Environment Variables Reference
 
-1. Real-time streaming (Kafka / Redpanda)
-2. Advanced ML models (XGBoost / LightGBM)
-3. Cloud deployment scaling (AWS / GCP Kubernetes)
-4. Real payment gateway webhooks (Stripe / Adyen)
-5. Production-grade distributed monitoring (Prometheus + Grafana)
+Copy `.env.example` to `.env` and configure credentials:
+
+| Variable | Target | Description | Example / Default |
+|---|---|---|---|
+| `DATABASE_URL` | Backend | PostgreSQL database connection string | `postgresql://user:pass@host:5432/db` |
+| `NEO4J_URI` | Backend | Neo4j Aura or local Bolt URI | `neo4j+s://xxxx.databases.neo4j.io` |
+| `NEO4J_USER` | Backend | Neo4j authentication user | `neo4j` |
+| `NEO4J_PASSWORD` | Backend | Neo4j authentication password | `your-secure-password` |
+| `ANTHROPIC_API_KEY` | Backend | Anthropic Claude API Key (optional) | `sk-ant-...` (uses rules if blank) |
+| `CORS_ORIGINS` | Backend | Allowed CORS origins | `https://autonomous-fraud-investigation.vercel.app` |
+| `NEXT_PUBLIC_API_URL` | Frontend | Public Backend API base URL | `https://autonomous-fraud-investigation.onrender.com` |
+| `NEXT_PUBLIC_API_KEY` | Frontend | API Key if required | *(leave blank if public)* |
 
 ---
 
-## 👨‍💻 Contributors
+## 📈 Known Limitations & Future Improvements
 
-This project was collaboratively developed as part of an AI-driven fraud investigation system.
-
-| Contributor | Role |
-|---|---|
-| **Sathwik** | Backend Development, AI Agent Design, Graph Intelligence, System Architecture |
-| **Rochita** | Frontend Development, Dashboard Design, Integration, Testing, Documentation |
+1. **Distributed Rate Limiting**: Transition from in-memory Starlette token-bucket to a Redis-backed distributed limiter for multi-replica horizontal scaling.
+2. **Real-Time Streaming**: Ingest live card swipe authorization feeds via Apache Kafka or Redpanda.
+3. **Advanced Graph ML**: Train inductive Graph Neural Networks (GNN / GraphSAGE) to compute dynamic node fraud embeddings alongside topological heuristics.
 
 ---
 

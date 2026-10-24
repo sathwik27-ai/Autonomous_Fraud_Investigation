@@ -6,6 +6,8 @@ exactly which signals feed the score, which keeps the system explainable.
 
 from __future__ import annotations
 
+import math
+
 from ..config import settings
 
 ANOMALY_WEIGHTS = {
@@ -44,14 +46,30 @@ def score_from_results(tx: dict, results: dict) -> dict:
 
     if "flagged_receiver" in anomalies:
         reasons.append(f"Beneficiary/receiver {pattern.get('receiver_id') or tx.get('receiver_id')} is flagged for illicit activity or prior fraud")
+
+    formatted_ratio = "high"
+    if ratio is not None:
+        try:
+            r_val = float(ratio)
+            if not math.isfinite(r_val) or r_val > 100_000:
+                formatted_ratio = f"{min(r_val, 999_999):,.0f}+" if math.isfinite(r_val) else "extreme"
+            else:
+                formatted_ratio = f"{r_val:,.1f}"
+        except (ValueError, TypeError):
+            formatted_ratio = str(ratio)
+
     if "amount_extreme_deviation" in anomalies:
         reasons.append(
-            f"Critical amount anomaly: transaction is {ratio}x the sender's average of ${pattern.get('user_avg_amount')}"
+            f"Critical amount anomaly: transaction is {formatted_ratio}x the sender's average of ${pattern.get('user_avg_amount')}"
         )
-    elif ratio and ratio >= 1.8:
-        reasons.append(
-            f"Transaction is {ratio}x the sender's average of ${pattern.get('user_avg_amount')}"
-        )
+    elif ratio:
+        try:
+            if float(ratio) >= 1.8:
+                reasons.append(
+                    f"Transaction is {formatted_ratio}x the sender's average of ${pattern.get('user_avg_amount')}"
+                )
+        except (ValueError, TypeError):
+            pass
     if "unusual_country" in pattern.get("anomalies", []):
         reasons.append(f"Transaction from {tx.get('country')} — outside the sender's usual countries")
     if "odd_hour" in pattern.get("anomalies", []):

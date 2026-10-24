@@ -36,8 +36,8 @@ import SystemStatus from "@/components/SystemStatus";
 import Ticker from "@/components/Ticker";
 import Timeline, { type TimelinePhase } from "@/components/Timeline";
 
-const POLL_MS = 3000;
-const BUILD = "fe35445";
+const POLL_MS = 5000;
+const BUILD = "7f66db4";
 const TABS = ["Dashboard", "Investigations", "Graph Intelligence", "Knowledge Base", "Automation", "Settings"] as const;
 type Tab = (typeof TABS)[number];
 
@@ -78,6 +78,7 @@ export default function Console() {
   const [online, setOnline] = useState(true);
   const [latency, setLatency] = useState<number | null>(null);
   const [graphBackend, setGraphBackend] = useState<string | null>(null);
+  const [graphConnected, setGraphConnected] = useState<boolean | null>(null);
   const [healthData, setHealthData] = useState<Health | null>(null);
   const [healthLoading, setHealthLoading] = useState(true);
 
@@ -112,10 +113,12 @@ export default function Console() {
       if (healthRes.status === "fulfilled") {
         setHealthData(healthRes.value);
         setGraphBackend(healthRes.value.graph_backend);
+        setGraphConnected(healthRes.value.graph_connected ?? true);
         setHealthLoading(false);
         setOnline(true);
       } else {
         setHealthLoading(false);
+        setGraphConnected(false);
         if (hasSuccess) {
           setOnline(true);
         } else {
@@ -184,13 +187,13 @@ export default function Console() {
         <div className="flex items-center gap-4">
           <span className="mono">FIS-CONSOLE v1.2 · build {BUILD}</span>
           <span className="mono hidden md:inline">
-            env: {healthLoading ? "connecting..." : healthData?.environment ? healthData.environment : online ? "production" : "unavailable"}
+            env: {healthLoading && !healthData ? "connecting..." : healthData?.environment ? healthData.environment : online ? "production" : "unavailable"}
           </span>
           <span className="mono hidden md:inline">
-            graph: {healthLoading ? "connecting..." : graphBackend ? graphBackend : online ? "connecting..." : "unavailable"}
+            graph: {healthLoading && !graphBackend ? "connecting..." : graphBackend ? (graphBackend === "neo4j" ? (graphConnected !== false ? "neo4j (connected)" : "neo4j (unreachable)") : graphBackend === "memory" ? "in-memory (fallback)" : graphBackend) : online ? "connecting..." : "unavailable"}
           </span>
           <span className="mono hidden lg:inline">
-            engine: {healthLoading ? "connecting..." : engine ? engine : online ? "rules" : "unavailable"}
+            engine: {healthLoading && !engine ? "connecting..." : engine ? engine : online ? "rules" : "unavailable"}
           </span>
         </div>
         <div className="flex items-center gap-4">
@@ -329,6 +332,7 @@ export default function Console() {
                   online={online}
                   latency={latency}
                   graphBackend={graphBackend}
+                  graphConnected={graphConnected}
                   engine={engine}
                   environment={healthData?.environment}
                   loading={healthLoading}
@@ -373,6 +377,7 @@ export default function Console() {
               online={online}
               latency={latency}
               graphBackend={graphBackend}
+              graphConnected={graphConnected}
               engine={engine}
               environment={healthData?.environment}
               loading={healthLoading}

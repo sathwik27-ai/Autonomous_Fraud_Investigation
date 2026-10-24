@@ -77,10 +77,20 @@ def health():
     """Unauthenticated liveness probe — safe to expose to load balancers."""
     engine = "claude" if settings.anthropic_api_key else "rules"
     env_name = os.environ.get("ENVIRONMENT") or ("production" if os.environ.get("RENDER") or "render.com" in settings.database_url or "neon.tech" in settings.database_url else "local-dev")
+    graph = get_graph()
+    graph_backend = graph.backend
+    graph_connected = True
+    if graph_backend == "neo4j" and hasattr(graph, "_driver"):
+        try:
+            graph._driver.verify_connectivity()
+            graph_connected = True
+        except Exception:
+            graph_connected = False
     return {
         "status": "ok",
         "environment": env_name,
-        "graph_backend": get_graph().backend,
+        "graph_backend": graph_backend,
+        "graph_connected": graph_connected,
         "engine": engine,
         "version": "1.2.0",
     }
