@@ -57,11 +57,15 @@ class AgentState(TypedDict, total=False):
     force_finalize: bool
 
 
-def _log(state: AgentState, entry: dict) -> list[dict]:
-    log = list(state.get("reasoning_log", []))
+def _append_log(log: list[dict], entry: dict) -> list[dict]:
     entry["step"] = len(log) + 1
     log.append(entry)
     return log
+
+
+def _log(state: AgentState | dict[str, Any], entry: dict) -> list[dict]:
+    log = list(state.get("reasoning_log", []))
+    return _append_log(log, entry)
 
 
 def _rules_args(tool: str, state: AgentState) -> dict:
@@ -154,12 +158,11 @@ def _claude_planner(state: AgentState) -> dict:
     response = client.messages.create(**kwargs)
 
     log = list(state.get("reasoning_log", []))
-    tmp_state = dict(state)
     for block in response.content:
         if getattr(block, "type", None) == "text" and getattr(block, "text", None):
-            log = _log({**tmp_state, "reasoning_log": log}, {"type": "thought", "content": block.text.strip()})
+            _append_log(log, {"type": "thought", "content": block.text.strip()})
         elif getattr(block, "type", None) == "thinking" and getattr(block, "thinking", None):
-            log = _log({**tmp_state, "reasoning_log": log}, {"type": "thought", "content": block.thinking.strip()})
+            _append_log(log, {"type": "thought", "content": block.thinking.strip()})
 
     tool_calls = [b for b in response.content if getattr(b, "type", None) == "tool_use"]
     finalize = next((c for c in tool_calls if c.name == "finalize_decision"), None)
@@ -204,7 +207,7 @@ def run_tools(state: AgentState) -> dict:
     for call in state.get("pending_calls", []):
         output = execute_tool(call["name"], call["input"])
         results[call["name"]] = output
-        log = _log({**state, "reasoning_log": log}, {
+        _append_log(log, {
             "type": "tool_call", "tool": call["name"],
             "input": call["input"], "output": output,
         })
